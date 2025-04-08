@@ -921,4 +921,92 @@
             }
             
             // Update UI
-            render
+            renderActivities();
+            closeModal();
+        }
+        
+        // Delete activity
+        function deleteActivity() {
+            const id = document.getElementById('postitId').value;
+            activities = activities.filter(activity => activity.id !== id);
+            localStorage.setItem('activities', JSON.stringify(activities));
+            renderActivities();
+            closeModal();
+        }
+        
+        // Clear all activities
+        function clearAllActivities() {
+            if (confirm('Are you sure you want to delete all activities? This cannot be undone.')) {
+                activities = [];
+                localStorage.setItem('activities', JSON.stringify(activities));
+                renderActivities();
+            }
+        }
+        
+        // Add new custom field
+        function addCustomField() {
+            const newField = {
+                id: generateId(),
+                name: `Field ${customFields.length + 1}`
+            };
+            customFields.push(newField);
+            renderCustomFields();
+        }
+        
+        // Event Listeners
+        addPostitBtn.addEventListener('click', openAddModal);
+        cancelBtn.addEventListener('click', closeModal);
+        deleteBtn.addEventListener('click', deleteActivity);
+        clearAllBtn.addEventListener('click', clearAllActivities);
+        postitForm.addEventListener('submit', saveActivity);
+        standardViewBtn.addEventListener('click', switchToStandardView);
+        groupByCustomerBtn.addEventListener('click', switchToGroupedView);
+        settingsBtn.addEventListener('click', openSettingsModal);
+        cancelSettingsBtn.addEventListener('click', closeModal);
+        saveSettingsBtn.addEventListener('click', saveSettings);
+        addFieldBtn.addEventListener('click', addCustomField);
+        
+        // Tab switching in settings modal
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.dataset.tab;
+                
+                // Update active tab button
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Show selected tab content
+                tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById(`${tab}Tab`).classList.add('active');
+            });
+        });
+        
+        // Color option selection
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const color = option.dataset.color;
+                if (enabledColors.includes(color)) {
+                    // Don't allow deselecting if it's the last color
+                    if (enabledColors.length > 1) {
+                        enabledColors = enabledColors.filter(c => c !== color);
+                        option.classList.remove('selected');
+                    }
+                } else {
+                    enabledColors.push(color);
+                    option.classList.add('selected');
+                }
+            });
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === modal || event.target === settingsModal) {
+                closeModal();
+            }
+        });
+        
+        // Initial render
+        renderActivities();
+    </script>
+</body>
+</html>
