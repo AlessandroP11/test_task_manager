@@ -668,33 +668,33 @@
 
             <div class="tab-content" id="deadlinesTab">
                 <h3>Deadline Settings</h3>
-                
+
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="showDeadlines" checked>
                         Show deadlines on post-its
                     </label>
                 </div>
-                
+
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="highlightUpcoming" checked>
                         Highlight upcoming deadlines
                     </label>
                 </div>
-                
+
                 <div class="form-group">
                     <label>
                         <input type="checkbox" id="highlightOverdue" checked>
                         Highlight overdue deadlines
                     </label>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="upcomingDays">Days before deadline to mark as upcoming:</label>
                     <input type="number" id="upcomingDays" min="1" max="30" value="3">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="deadlineFormat">Deadline date format:</label>
                     <select id="deadlineFormat">
@@ -800,14 +800,14 @@
         const backupFilenameInput = document.getElementById('backupFilename');
         const statusMessage = document.getElementById('statusMessage');
         const autosaveIndicator = document.getElementById('autosaveIndicator');
-        
+
         // Deadline settings elements
         const showDeadlines = document.getElementById('showDeadlines');
         const highlightUpcoming = document.getElementById('highlightUpcoming');
         const highlightOverdue = document.getElementById('highlightOverdue');
         const upcomingDays = document.getElementById('upcomingDays');
         const deadlineFormat = document.getElementById('deadlineFormat');
-        
+
         // Filter buttons
         const filterAllBtn = document.getElementById('filterAll');
         const filterUpcomingBtn = document.getElementById('filterUpcoming');
@@ -822,29 +822,29 @@
         // Format a date based on the selected format
         function formatDate(dateString) {
             if (!dateString) return '';
-            
+
             const date = new Date(dateString);
-            
+
             switch(displayOptions.deadlineFormat) {
                 case 'long':
-                    return date.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    return date.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
                     });
                 case 'compact':
-                    return date.toLocaleDateString('en-US', { 
-                        month: '2-digit', 
-                        day: '2-digit', 
-                        year: 'numeric' 
+                    return date.toLocaleDateString('en-US', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        year: 'numeric'
                     });
                 case 'short':
                 default:
-                    return date.toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
+                    return date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
                     });
             }
         }
@@ -852,23 +852,23 @@
         // Check if a deadline is upcoming or overdue
         function getDeadlineStatus(deadlineDate) {
             if (!deadlineDate) return null;
-            
+
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
+
             const deadline = new Date(deadlineDate);
             deadline.setHours(0, 0, 0, 0);
-            
+
             // Calculate days difference
             const diffTime = deadline.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+
             if (diffDays < 0) {
                 return 'overdue';
             } else if (diffDays <= displayOptions.upcomingDays) {
                 return 'upcoming';
             }
-            
+
             return 'normal';
         }
 
@@ -877,7 +877,7 @@
             statusMessage.textContent = message;
             statusMessage.className = 'status-message ' + type;
             statusMessage.style.display = 'block';
-            
+
             setTimeout(() => {
                 statusMessage.style.display = 'none';
             }, 3000);
@@ -917,5 +917,181 @@
                 const deadlineStatus = getDeadlineStatus(activity.deadline);
                 let deadlineClass = '';
                 let statusLabel = '';
-                
-                if
+
+                // Continuing the JavaScript code...
+
+if (deadlineStatus === 'overdue' && displayOptions.highlightOverdue) {
+    deadlineClass = 'deadline-overdue';
+    statusLabel = '<span class="deadline-warning overdue">OVERDUE</span>';
+} else if (deadlineStatus === 'upcoming' && displayOptions.highlightUpcoming) {
+    deadlineClass = 'deadline-upcoming';
+    statusLabel = '<span class="deadline-warning upcoming">UPCOMING</span>';
+}
+
+postitContent += `
+    <div class="postit-deadline ${deadlineClass}">
+        <span class="deadline-icon">📅</span>
+        ${formatDate(activity.deadline)} ${statusLabel}
+    </div>`;
+}
+
+// Custom fields
+if (activity.customFields) {
+for (const field in activity.customFields) {
+    if (activity.customFields[field]) {
+        postitContent += `
+            <div class="postit-field">
+                <span class="postit-field-label">${field}:</span>
+                <span class="postit-field-value">${activity.customFields[field]}</span>
+            </div>`;
+    }
+}
+}
+
+// Priority corner indicator
+if (displayOptions.showPriorityCorner) {
+postitContent += `<div class="priority priority-${activity.priority}"></div>`;
+}
+
+postit.innerHTML = postitContent;
+postit.addEventListener('click', () => editPostit(activity.id));
+
+return postit;
+}
+
+// Filter activities based on deadline status
+function filterActivities(activities) {
+switch (currentFilter) {
+case 'upcoming':
+    return activities.filter(activity => {
+        if (!activity.deadline) return false;
+        const status = getDeadlineStatus(activity.deadline);
+        return status === 'upcoming';
+    });
+case 'overdue':
+    return activities.filter(activity => {
+        if (!activity.deadline) return false;
+        const status = getDeadlineStatus(activity.deadline);
+        return status === 'overdue';
+    });
+case 'nodeadline':
+    return activities.filter(activity => !activity.deadline);
+default:
+    return activities;
+}
+}
+
+// Display activities
+function displayActivities() {
+board.innerHTML = '';
+const filteredActivities = filterActivities(activities);
+
+if (currentView === 'standard') {
+filteredActivities.forEach(activity => {
+    board.appendChild(createPostitElement(activity));
+});
+} else { // grouped view
+const groups = {};
+filteredActivities.forEach(activity => {
+    if (!groups[activity.customer]) {
+        groups[activity.customer] = [];
+    }
+    groups[activity.customer].push(activity);
+});
+
+Object.keys(groups).sort().forEach(customer => {
+    const group = document.createElement('div');
+    group.className = 'customer-group';
+
+    const title = document.createElement('div');
+    title.className = 'group-title';
+    title.textContent = customer;
+    group.appendChild(title);
+
+    const activitiesContainer = document.createElement('div');
+    activitiesContainer.className = 'group-activities';
+    groups[customer].forEach(activity => {
+        activitiesContainer.appendChild(createPostitElement(activity));
+    });
+
+    group.appendChild(activitiesContainer);
+    board.appendChild(group);
+});
+}
+}
+
+// Save activities to local storage
+function saveActivities() {
+const currentDataString = JSON.stringify(activities);
+const currentHash = btoa(currentDataString);
+
+if (currentHash !== lastDataHash) {
+localStorage.setItem('activities', currentDataString);
+lastDataHash = currentHash;
+
+if (displayOptions.enableAutoSave) {
+    autosaveIndicator.classList.add('visible');
+    setTimeout(() => {
+        autosaveIndicator.classList.remove('visible');
+    }, 2000);
+}
+}
+}
+
+// Initialize display
+displayActivities();
+
+// Event Listeners for View Controls
+standardViewBtn.addEventListener('click', () => {
+currentView = 'standard';
+standardViewBtn.classList.add('active-view');
+groupByCustomerBtn.classList.remove('active-view');
+displayActivities();
+});
+
+groupByCustomerBtn.addEventListener('click', () => {
+currentView = 'grouped';
+groupByCustomerBtn.classList.add('active-view');
+standardViewBtn.classList.remove('active-view');
+displayActivities();
+});
+
+// Filter button event listeners
+filterAllBtn.addEventListener('click', () => {
+currentFilter = 'all';
+document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+filterAllBtn.classList.add('active');
+displayActivities();
+});
+
+filterUpcomingBtn.addEventListener('click', () => {
+currentFilter = 'upcoming';
+document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+filterUpcomingBtn.classList.add('active');
+displayActivities();
+});
+
+filterOverdueBtn.addEventListener('click', () => {
+currentFilter = 'overdue';
+document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+filterOverdueBtn.classList.add('active');
+displayActivities();
+});
+
+filterNoDeadlineBtn.addEventListener('click', () => {
+currentFilter = 'nodeadline';
+document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+filterNoDeadlineBtn.classList.add('active');
+displayActivities();
+});
+
+// Auto-save functionality
+if (displayOptions.enableAutoSave) {
+setInterval(() => {
+saveActivities();
+}, 30000); // Auto-save every 30 seconds
+}
+
+</script>
+</body>
+</html>
