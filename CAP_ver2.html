@@ -2310,6 +2310,105 @@ const technicianModal = document.getElementById('technicianModal');
             }
         }
 
+
+        // Filter handler module
+        const FilterHandler = {
+            activeFilters: new Set(['all']), // Start with 'all' filter active
+
+            init() {
+                // Initialize all filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleFilterClick(e.target));
+                });
+
+                // Initial filter application
+                this.applyFilters();
+            },
+
+            handleFilterClick(button) {
+                const filterId = button.id.replace('filter', '').toLowerCase();
+
+                // If All is clicked, clear other filters
+                if (filterId === 'all') {
+                    this.activeFilters.clear();
+                    this.activeFilters.add('all');
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.id === 'filterAll');
+                    });
+                } else {
+                    // Remove 'all' filter and its active class
+                    this.activeFilters.delete('all');
+                    document.getElementById('filterAll').classList.remove('active');
+
+                    // Toggle the current filter
+                    if (this.activeFilters.has(filterId)) {
+                        this.activeFilters.delete(filterId);
+                        button.classList.remove('active');
+
+                        // If no filters are active, reactivate 'all'
+                        if (this.activeFilters.size === 0) {
+                            this.activeFilters.add('all');
+                            document.getElementById('filterAll').classList.add('active');
+                        }
+                    } else {
+                        this.activeFilters.add(filterId);
+                        button.classList.add('active');
+                    }
+                }
+
+                console.log('Active filters:', Array.from(this.activeFilters)); // Debug log
+                this.applyFilters();
+            },
+
+            matchesFilter(postit, filter) {
+                switch(filter) {
+                    case 'all':
+                        return true;
+                    case 'upcoming':
+                        return postit.querySelector('.deadline-warning.upcoming') !== null;
+                    case 'overdue':
+                        return postit.querySelector('.deadline-warning.overdue') !== null;
+                    case 'nodeadline':
+                        return postit.querySelector('.deadline-warning') === null;
+                    case 'materialupcoming':
+                        return postit.querySelector('.material-deadline .upcoming') !== null;
+                    case 'materialoverdue':
+                        return postit.querySelector('.material-deadline .overdue') !== null;
+                    case 'done':
+                        return postit.classList.contains('done-task');
+                    case 'notdone':
+                        return !postit.classList.contains('done-task');
+                    default:
+                        return false;
+                }
+            },
+
+            applyFilters() {
+                const postits = document.querySelectorAll('.postit');
+                const activeFiltersArray = Array.from(this.activeFilters);
+
+                postits.forEach(postit => {
+                    if (this.activeFilters.has('all')) {
+                        postit.style.display = '';
+                        return;
+                    }
+
+                    // Check if the postit matches ALL active filters (AND logic)
+                    const matchesAllFilters = activeFiltersArray.every(filter =>
+                        this.matchesFilter(postit, filter)
+                    );
+
+                    postit.style.display = matchesAllFilters ? '' : 'none';
+                });
+            }
+        };
+
+        // Initialize filters when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            FilterHandler.init();
+            console.log('Filter handler initialized'); // Debug log
+        });
+
         // Check if a deadline is upcoming or overdue
         function getDeadlineStatus(deadlineDate, isForMaterial = false) {
     if (!deadlineDate) return null;
