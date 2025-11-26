@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Location Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; }
+    </style>
+</head>
+<body>
+    <h1>World Map with Customer Locations</h1>
+    <div id="map"></div>
+    <form id="address-form">
+        <input type="text" id="address" placeholder="Enter address" required>
+        <button type="submit">Add Location</button>
+    </form>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([20, 0], 2); // Initial view at the center of the world
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var markers = [];
+
+        document.getElementById('address-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var address = document.getElementById('address').value;
+            // Geocode the address (using a placeholder function here)
+            geocodeAddress(address);
+            document.getElementById('address').value = '';
+        });
+
+        function geocodeAddress(address) {
+            // You can use a geocoding service like Nominatim here
+            fetch(`https://nominatim.openstreetmap.org/search?q=${address}&format=json`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    var lat = data[0].lat;
+                    var lon = data[0].lon;
+                    var marker = L.marker([lat, lon]).addTo(map);
+                    marker.bindPopup(address).openPopup();
+                    markers.push(marker);
+                } else {
+                    alert('Location not found');
+                }
+            });
+        }
+
+        // More location management features can be added here
+    </script>
+</body>
+</html>
